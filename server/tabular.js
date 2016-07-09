@@ -18,6 +18,8 @@
  */
 
 Meteor.publish("tabular_genericPub", function (tableName, ids, fields) {
+  console.log('tabular_genericPub');
+
   var self = this;
 
   check(tableName, String);
@@ -47,6 +49,8 @@ Meteor.publish("tabular_genericPub", function (tableName, ids, fields) {
 });
 
 Meteor.publish("tabular_getInfo", function(tableName, selector, sort, skip, limit) {
+  console.log('tabular_getInfo');
+
   var self = this;
 
   check(tableName, String);
@@ -115,6 +119,7 @@ Meteor.publish("tabular_getInfo", function(tableName, selector, sort, skip, limi
 
   var recordReady = false;
   var updateRecords = function updateRecords() {
+    console.log('updateRecords');
     var currentCount = countCursor.count();
 
     // From https://datatables.net/manual/server-side

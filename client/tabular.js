@@ -43,6 +43,9 @@ var tabularOnRendered = function () {
     // define the function that DataTables will call upon first load and whenever
     // we tell it to reload data, such as when paging, etc.
     ajax: function (data, callback/*, settings*/) {
+
+      console.log('ajax start');
+
       // When DataTables requests data, first we set
       // the new skip, limit, order, and pubSelector values
       // that DataTables has requested. These trigger
@@ -60,13 +63,23 @@ var tabularOnRendered = function () {
       }
 
       template.tabular.isLoading.set(true);
-      //console.log('data', template.tabular.data);
+      console.log('ajax data', data);
 
       // Update skip
-      template.tabular.skip.set(data.start);
-      Session.set('Tabular.LastSkip', data.start);
+//      template.tabular.skip.set(data.start);
+//      Session.set('Tabular.LastSkip', data.start);
+
+      //var skip = (data.draw-1);
+      //var skip = data.start+data.draw;
+      //var skip = data.draw*data.length;
+      //var skip = data.draw*data.length;
+      //alert(skip);
+      var skip = data.start;
+      template.tabular.skip.set(skip);
+      Session.set('Tabular.LastSkip', skip);
 
       // Update limit
+
       var options = template.tabular.options.get();
       var hardLimit = options && options.limit;
       if (data.length === -1) {
@@ -95,9 +108,10 @@ var tabularOnRendered = function () {
 
       // We're ready to subscribe to the data.
       // Matters on the first run only.
+      //template.tabular.ready.set(false);
       template.tabular.ready.set(true);
 
-      //console.log('ajax');
+      console.log('ajax callback');
 
       callback({
         draw: data.draw,
@@ -110,7 +124,7 @@ var tabularOnRendered = function () {
   };
 
   // For testing
-  //setUpTestingAutoRunLogging(template);
+  setUpTestingAutoRunLogging(template);
 
   // Reactively determine table columns, fields, and searchFields.
   // This will rerun whenever the current template data changes.
@@ -118,7 +132,7 @@ var tabularOnRendered = function () {
   template.autorun(function () {
     var data = Template.currentData();
 
-    //console.log('currentData autorun', data);
+    console.log('currentData autorun', data);
 
     if (!data) {return;}
 
@@ -197,11 +211,15 @@ var tabularOnRendered = function () {
   // It's not necessary to call stop
   // on subscriptions that are within autorun computations.
   template.autorun(function () {
+    console.log('tabular_getInfo autorun - ready check');
+
     if (!template.tabular.ready.get()) {
+      console.log('tabular_getInfo autorun !ready');
+
       return;
     }
 
-    //console.log('tabular_getInfo autorun');
+    console.log('tabular_getInfo autorun we are ready, call subscribe');
 
     var connection = template.tabular.connection;
     var context = connection || Meteor;
@@ -213,6 +231,7 @@ var tabularOnRendered = function () {
       template.tabular.skip.get(),
       template.tabular.limit.get()
     );
+
   });
 
   // Second Subscription
@@ -220,6 +239,8 @@ var tabularOnRendered = function () {
   // fields to only those we need to display. It's not necessary to call stop
   // on subscriptions that are within autorun computations.
   template.autorun(function () {
+    console.log('  // Second Subscription');
+
     // tableInfo is reactive and causes a rerun whenever the
     // list of docs that should currently be in the table changes.
     // It does not cause reruns based on the documents themselves
@@ -228,7 +249,7 @@ var tabularOnRendered = function () {
     var collection = template.tabular.collection.get();
     var tableInfo = Tabular.getRecord(tableName, collection) || {};
 
-    //console.log('tableName and tableInfo autorun', tableName, tableInfo);
+    console.log('tableName and tableInfo autorun', tableName, tableInfo);
 
     template.tabular.recordsTotal = tableInfo.recordsTotal || 0;
     template.tabular.recordsFiltered = tableInfo.recordsFiltered || 0;
@@ -264,7 +285,7 @@ var tabularOnRendered = function () {
     var userOptions = template.tabular.options.get();
     var options = _.extend({}, ajaxOptions, userOptions);
 
-    //console.log('userOptions autorun', options);
+    console.log('userOptions autorun', options);
 
     // unless the user provides her own displayStart,
     // we use a value from Session. This keeps the
@@ -283,6 +304,7 @@ var tabularOnRendered = function () {
     if (table) {
       var dt = $tableElement.DataTable();
       if (dt) {
+        console.log('dt.destory...');
         dt.destroy();
         $tableElement.empty();
       }
@@ -290,6 +312,7 @@ var tabularOnRendered = function () {
 
     // We start with an empty table.
     // Data will be populated by ajax function now.
+    console.log('table = $tableElement.DataTable(options)');
     table = $tableElement.DataTable(options);
   });
 
@@ -312,7 +335,14 @@ var tabularOnRendered = function () {
     // * `selector` attribute changed reactively
     // * Docs were added/changed/removed by this user or
     //   another user, causing visible result set to change.
+    console.log('Tabular.getRecord...');
     var tableInfo = Tabular.getRecord(tableName, collection);
+
+    console.log('collection');
+    console.dir(collection);
+
+    console.log('tableInfo');
+    console.dir(tableInfo);
 
     if (!collection || !tableInfo) {
       return;
@@ -379,7 +409,7 @@ var tabularOnRendered = function () {
   // XXX Not working
   template.autorun(function () {
     var isLoading = template.tabular.isLoading.get();
-    //console.log('LOADING', isLoading);
+    console.log('LOADING', isLoading);
     if (isLoading) {
       template.$('.dataTables_processing').show();
     } else {
@@ -389,6 +419,7 @@ var tabularOnRendered = function () {
 
   // force table paging to reset to first page when we change page length
   $tableElement.on('length.dt', function () {
+    console.log('reset table paging');
     resetTablePaging = true;
   });
 };
@@ -416,29 +447,29 @@ if (typeof Template.tabular.onDestroyed === 'function') {
   Template.tabular.destroyed = tabularOnDestroyed;
 }
 
-//function setUpTestingAutoRunLogging(template) {
-//  template.autorun(function () {
-//    var val = template.tabular.tableName.get();
-//    console.log('tableName changed', val);
-//  });
-//
-//  template.autorun(function () {
-//    var val = template.tabular.pubSelector.get();
-//    console.log('pubSelector changed', val);
-//  });
-//
-//  template.autorun(function () {
-//    var val = template.tabular.sort.get();
-//    console.log('sort changed', val);
-//  });
-//
-//  template.autorun(function () {
-//    var val = template.tabular.skip.get();
-//    console.log('skip changed', val);
-//  });
-//
-//  template.autorun(function () {
-//    var val = template.tabular.limit.get();
-//    console.log('limit changed', val);
-//  });
-//}
+function setUpTestingAutoRunLogging(template) {
+  template.autorun(function () {
+    var val = template.tabular.tableName.get();
+    console.log('tableName changed', val);
+  });
+
+  template.autorun(function () {
+    var val = template.tabular.pubSelector.get();
+    console.log('pubSelector changed', val);
+  });
+
+  template.autorun(function () {
+    var val = template.tabular.sort.get();
+    console.log('sort changed', val);
+  });
+
+  template.autorun(function () {
+    var val = template.tabular.skip.get();
+    console.log('skip changed', val);
+  });
+
+  template.autorun(function () {
+    var val = template.tabular.limit.get();
+    console.log('limit changed', val);
+  });
+}

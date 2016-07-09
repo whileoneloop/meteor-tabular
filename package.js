@@ -1,14 +1,14 @@
 /* global Package, Npm */
 
 Package.describe({
-  name: 'aldeed:tabular',
+  name: 'whileoneloop:tabular',
   summary: 'Datatables for large or small datasets in Meteor',
   version: '1.5.5',
   git: 'https://github.com/aldeed/meteor-tabular.git'
 });
 
 Npm.depends({
-  datatables: '1.10.9'
+  datatables: '1.10.12'
 });
 
 Package.onUse(function(api) {
